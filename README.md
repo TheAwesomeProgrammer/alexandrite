@@ -12,7 +12,7 @@ Alexandrite comes packed full of features!
 - Customizable theme hue
 - Powerful account switcher, login to different accounts across the same or different instances simultaneously in different browser tabs
 - Most mod tools
-- Supports most markdown formatting
+- Supports most markdown formatting.
 
 ## Support Development
 
