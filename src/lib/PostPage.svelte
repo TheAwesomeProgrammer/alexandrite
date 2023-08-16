@@ -65,7 +65,7 @@
 			</div>
 			<PostLayout
 				{postView}
-				expandPostContent={showPost}
+				bind:expandPostContent={showPost}
 				supportsOverlay={false}
 				forceLayout="LIST"
 				bind:api={postLayoutApi}
@@ -76,6 +76,12 @@
 					<a href="#comments" class="button tertiary {small}"
 						><Icon icon="chevron-down" /> To Comments ({postView.counts.comments})</a
 					>
+					{#if postAssertions.has.any}
+						<button class="tertiary {small}" on:click={() => (showPost = !showPost)}>
+							<Icon icon={showPost ? 'eye-slash' : 'newspaper'} />
+							{showPost ? 'Hide' : 'Show'} Content
+						</button>
+					{/if}
 				</Stack>
 			</PostLayout>
 			<hr class="w-100" id="comments" />
@@ -85,7 +91,7 @@
 					<Accordion bind:open={$showNewCommentComposer} buttonClasses="tertiary">
 						<span slot="title">Leave a comment</span>
 						{#key $showNewCommentComposer}
-							<form bind:this={newCommentForm}>
+							<form bind:this={newCommentForm} use:submitOnHardEnter>
 								<CommentEditor
 									submitting={$newCommentState.busy}
 									bind:value={newCommentText}
@@ -187,7 +193,13 @@
 	import ToggleGroup from './ToggleGroup.svelte';
 	import CommentEditor from './comments/CommentEditor.svelte';
 	import { getCommentContextId, nameAtInstance } from './nav-utils';
-	import { createStatefulForm, type ActionFn, localStorageBackedStore, isElementEditable } from './utils';
+	import {
+		createStatefulForm,
+		type ActionFn,
+		localStorageBackedStore,
+		isElementEditable,
+		submitOnHardEnter
+	} from './utils';
 	import { getSettingsContext } from './settings-context';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
@@ -201,7 +213,7 @@
 	import type { VirtualFeedAPI } from './virtual-feed';
 	import type { CommentAPI, CommentBranch } from './comments/comment-utils';
 	import { getCommunityContext } from './community-context/community-context';
-	import type { PostLayoutAPI } from './feeds/posts/post-utils';
+	import { makePostAssertions, type PostLayoutAPI } from './feeds/posts/post-utils';
 	import { getAppContext } from './app-context';
 
 	const dispatch = createEventDispatcher<{ close: void }>();
@@ -226,6 +238,8 @@
 
 	$: client = $profile.client;
 	$: jwt = $profile.jwt;
+
+	$: postAssertions = makePostAssertions(postView);
 
 	const postCVStore = getContentViewStore();
 
