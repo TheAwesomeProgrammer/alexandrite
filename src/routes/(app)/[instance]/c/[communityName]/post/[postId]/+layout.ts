@@ -5,15 +5,15 @@ import type { LayoutLoad } from './$types';
 export const load = (async ({ params }) => {
 	const { client, jwt } = get(profile);
 
-	const community = params.communityName;
+	const communityName = params.communityName;
 
 	const cv = await client.getCommunity({
-		name: community,
+		name: communityName,
 		auth: jwt
 	});
 
 	return {
-		communityName: params.communityName,
-		communityView: cv.community_view
+		communityName: communityName,
+		communityView: cv?.community_view
 	};
 }) satisfies LayoutLoad;
