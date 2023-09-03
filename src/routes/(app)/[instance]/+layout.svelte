@@ -62,13 +62,16 @@
 			{instanceText}
 		</span>
 
-		<LogButton on:click={() => console.log(data)} text="Log Layout Data" small={false} />
+		{#if $profile.loggedIn}
+			<HeaderCreateMenu />
+		{/if}
 		<HeaderUserMenu on:accounts={() => (showAccountsSelector = true)} />
 		<IconButton
 			icon={$sidebarVisible ? 'angles-right' : 'angles-left'}
 			on:click={() => ($sidebarVisible = !$sidebarVisible)}
 			text="Toggle sidebar"
 		/>
+		<LogButton on:click={() => console.log(data)} text="Log Layout Data" small={false} />
 	</div>
 </Header>
 
@@ -107,6 +110,7 @@
 	import { afterNavigate, beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import CommunityContext from '$lib/community-context/CommunityContext.svelte';
 	import ModContext from '$lib/mod/ModContext.svelte';
+	import HeaderCreateMenu from './HeaderCreateMenu.svelte';
 	import { Sidebar, Header, Icon, Search, Toasts, Modals, getSxColorSchemeContext } from 'sheodox-ui';
 	import ProfileOverlay from '$lib/profiles/ProfileOverlay.svelte';
 	import { onDestroy, onMount } from 'svelte';
@@ -179,6 +183,11 @@
 		navSidebarOpen = writable(false),
 		navSidebarDocked = localStorageBackedStore('nav-sidebar-docked', AlexandriteSettingsDefaults.navSidebarDocked),
 		colorScheme = localStorageBackedStore('color-scheme', AlexandriteSettingsDefaults.colorScheme),
+		showModlogWarning = localStorageBackedStore('show-modlog', AlexandriteSettingsDefaults.showModlogWarning),
+		showModlogWarningModerated = localStorageBackedStore(
+			'show-modlog-moderated',
+			AlexandriteSettingsDefaults.showModlogWarningModerated
+		),
 		cssVariables = writable<Record<string, string | number>>({});
 
 	const sxColorScheme = getSxColorSchemeContext();
@@ -258,7 +267,9 @@
 		feedLayout,
 		navSidebarDocked,
 		postPreviewLayout,
-		postListLayoutContentPreview
+		postListLayoutContentPreview,
+		showModlogWarning,
+		showModlogWarningModerated
 	});
 
 	$: instanceText = $profile.username ? `${$profile.username}@${$profile.instance}` : $profile.instance;
@@ -290,6 +301,9 @@
 			});
 			headerResizeObserver.observe(header);
 		}
+
+		// if they want the sidebar to stay open, start with it open
+		$navSidebarOpen = $navSidebarDocked;
 
 		storeUnsubs.push(
 			cssVariables.subscribe((vars) => {
