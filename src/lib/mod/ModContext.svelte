@@ -42,12 +42,18 @@
 	import { setModContext, type ModAction, type ModContext } from './mod-context';
 	import { showPromptModal, createAutoExpireToast } from 'sheodox-ui';
 	import { profile } from '$lib/profiles/profiles';
+	import { getCommunityContext } from '$lib/community-context/community-context';
+	import { getAppContext } from '$lib/app-context';
 
 	$: client = $profile.client;
 	$: jwt = $profile.jwt;
 
+	const { siteMeta } = getAppContext();
+
 	const pending = writable(new Set<string>()),
 		DAY_MS = 1000 * 60 * 60 * 24;
+
+	const communityContext = getCommunityContext();
 
 	interface PendingBan {
 		username: string;
@@ -72,7 +78,7 @@
 	});
 
 	// marks an arbitrary thing as pending
-	export const setPending = (action: ModAction, id: number, isPending: boolean) => {
+	export const setPending = (action: ModAction, id: number | string, isPending: boolean) => {
 		pending.update((p) => {
 			const actionId = `${action}-${id}`;
 			isPending ? p.add(actionId) : p.delete(actionId);
@@ -292,6 +298,44 @@
 		}
 	};
 
+	const addMod: ModContext['addMod'] = async (opt) => {
+		if (!jwt) {
+			return;
+		}
+
+		const pendingKey = `${opt.communityId}-${opt.personId}`;
+
+		setPending('add-mod', pendingKey, true);
+
+		try {
+			const res = await client.addModToCommunity({
+				auth: jwt,
+				added: opt.added,
+				community_id: opt.communityId,
+				person_id: opt.personId
+			});
+
+			successToast(opt.added ? `Added ${opt.personName} to mods` : `Removed ${opt.personName} from mods`);
+
+			communityContext.updateCommunity(await client.getCommunity({ auth: jwt, id: opt.communityId }));
+
+			if (opt.personId === $siteMeta.my_user?.local_user_view.person.id && !opt.added) {
+				// user resigned, remove this community from siteMeta to hide mod actions
+				siteMeta.update((meta) => {
+					if (meta.my_user && (meta.my_user?.moderates?.length ?? 0) > 0) {
+						// filter out that community
+						meta.my_user.moderates = meta.my_user.moderates.filter((mod) => mod.community.id !== opt.communityId);
+					}
+					return meta;
+				});
+			}
+
+			return res;
+		} finally {
+			setPending('add-mod', pendingKey, false);
+		}
+	};
+
 	setModContext({
 		pending,
 		banPerson,
@@ -299,6 +343,7 @@
 		removeComment,
 		featurePost,
 		lockPost,
-		distinguishComment
+		distinguishComment,
+		addMod
 	});
 </script>
