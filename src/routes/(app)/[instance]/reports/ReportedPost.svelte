@@ -116,7 +116,7 @@
 					if (v.type === 'post-report' && v.view.post.id === view.post.id) {
 						v.view = {
 							...v.view,
-							...res.post_view
+							post: res.post_view.post
 						};
 					}
 					return v;
@@ -139,7 +139,6 @@
 		}
 
 		const res = await client.resolvePostReport({
-			auth: jwt,
 			report_id: view.post_report.id,
 			resolved
 		});
