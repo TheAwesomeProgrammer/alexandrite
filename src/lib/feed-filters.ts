@@ -111,6 +111,10 @@ export const ListingOptions = (loggedIn: boolean) => [
 
 export const PostSortOptions = [
 	{
+		value: 'Scaled',
+		label: 'Scaled'
+	},
+	{
 		value: 'Hot',
 		label: 'Hot'
 	},
